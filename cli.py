@@ -1,6 +1,7 @@
 from dataclasses import asdict
 from time import perf_counter
 from token_usage import TokenUsage, snapshot
+from context_builder import build_context
 
 from inference import create_client, error_details
 from karyo_config import load_config, ConfigError
@@ -24,7 +25,8 @@ def main(msg, memory, client=None, usage=None, model=None, max_tokens=None):
     for _ in range(MAX_TOOL_ROUNDS):
         request = {
             "model": model,
-            "messages": memory.get_memory(),
+            "messages": build_context(memory.get_memory(), goal=memory.goal,
+                                      goal_message_index=memory.goal_message_index),
             "tools": get_tool_schemas(),
             "max_tokens": max_tokens,
         }
@@ -104,7 +106,7 @@ def run():
         if usage.trace_path:
             print(f"Trace: {usage.trace_path}")
         client = create_client(provider=args.provider or config['provider'], timeout=config['timeout_seconds'])
-        print("Karyo · Type /usage for token totals or /exit to quit.")
+        print("Karyo · Type /goal to view or change the session goal, /usage for token totals, or /exit to quit.")
         print("This agent can write files and run shell commands with your user permissions.")
         while True:
             message = input(">> ").strip()
@@ -113,6 +115,18 @@ def run():
                 return 0
             if message == "/usage":
                 print(usage.summary())
+                continue
+            if message == "/goal":
+                print(memory.goal or "No session goal set.")
+                continue
+            if message.startswith("/goal "):
+                new_goal = message[len("/goal "):].strip()
+                if new_goal:
+                    memory.update_goal(new_goal)
+                    usage.event("goal_updated", goal=new_goal)
+                    print(f"Session goal updated: {new_goal}")
+                else:
+                    print("Usage: /goal <new goal>")
                 continue
             if message:
                 main(message, memory, client, usage, model=args.model or config['model'], max_tokens=config['max_tokens'])

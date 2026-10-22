@@ -153,12 +153,18 @@ Python 3.10+ is supported. The installer selects Python 3.13.
 ```sh
 uv sync --locked
 uv run karyo
-uv run python -m unittest -v test_tools test_auth test_usage test_trace_viewer test_config test_sessions
+uv run python -m unittest discover -v
 uv build
 ```
 
 The CLI operates in the directory where you launch it. Conversation memory lasts
 for the current session.
+
+Karyo keeps the first nonempty request as the session goal and includes it in
+model context after it falls outside the recent four-turn window. Use `/goal` to
+view it or `/goal <new goal>` to replace it. Model requests keep complete recent
+turns and shorten tool results longer than 6,000 characters; full conversation
+history and tool results remain in memory and session traces.
 
 Configuration loads in this order (later values override earlier ones):
 

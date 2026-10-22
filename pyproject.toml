@@ -18,7 +18,7 @@ build-backend = "setuptools.build_meta"
 karyo = "cli:run"
 
 [tool.setuptools]
-py-modules = ["cli", "inference", "harness_auth", "token_usage", "trace_viewer"]
+py-modules = ["cli", "inference", "harness_auth", "token_usage", "trace_viewer", "context_builder"]
 packages = ["memory", "tools", "karyo_config"]
 
 [tool.setuptools.package-data]

@@ -9,7 +9,7 @@ from unittest.mock import Mock
 
 from cli import main
 from memory.memory import Memory
-from test_tools import response, call
+from tests.test_tools import response, call
 from token_usage import TokenUsage
 from inference import error_details
 
