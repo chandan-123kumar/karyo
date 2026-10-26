@@ -1,7 +1,7 @@
 import shutil
 import subprocess
 import tempfile
-from pathlib import Path
+from tools.file_operations import resolve_workspace_path
 
 
 def search_files(pattern, path=".", glob=None, hidden=False):
@@ -24,7 +24,11 @@ def search_files(pattern, path=".", glob=None, hidden=False):
         command.extend(["--glob", glob])
     if hidden:
         command.append("--hidden")
-    command.extend(["--", pattern, str(Path(path).expanduser().resolve())])
+    try:
+        search_path = resolve_workspace_path(path)
+    except ValueError:
+        return {"ok": False, "error": {"code": "outside_workspace"}}
+    command.extend(["--", pattern, str(search_path)])
 
     # Spool output to disk so broad searches don't fill Python's memory.
     with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:

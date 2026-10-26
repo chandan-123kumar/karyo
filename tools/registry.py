@@ -3,6 +3,7 @@ from tools.file_operations import read_file
 from tools.file_operations import write_file
 from tools.shell import run_shell
 from tools.search import search_files
+from tools.code_changes import apply_patch, show_diff
 
 TOOL_REGISTRY = {
     "search_files": {
@@ -11,7 +12,7 @@ TOOL_REGISTRY = {
             "type": "function",
             "function": {
                 "name": "search_files",
-                "description": "Search text recursively with ripgrep. Returns file paths, line numbers, and matching lines. Respects ignore files, skips binary files, and defaults to skipping hidden files. Any accessible directory is allowed. Output is capped at 20 KB with a 15-second timeout.",
+                "description": "Search text recursively inside the workspace with ripgrep. Returns file paths, line numbers, and matching lines. Respects ignore files, skips binary files, and defaults to skipping hidden files. Output is capped at 20 KB with a 15-second timeout.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -32,7 +33,7 @@ TOOL_REGISTRY = {
             "type": "function",
             "function": {
                 "name": "run_shell",
-                "description": "Execute a command with /bin/sh. Return stdout, stderr, exit code, and timeout status.",
+                "description": "Execute a command with /bin/sh using a working directory inside the workspace. Commands still run with the user's permissions. Return bounded stdout/stderr, exit code, truncation flags, and timeout status.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -52,7 +53,7 @@ TOOL_REGISTRY = {
             "type": "function",
             "function": {
                 "name": "write_file",
-                "description": "Write a UTF-8 file at any writable path. Relative paths use the current directory. Set overwrite=true to replace contents.",
+                "description": "Write a UTF-8 file inside the workspace. Relative paths use the current directory. Set overwrite=true to replace contents.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -72,15 +73,12 @@ TOOL_REGISTRY = {
             "type": "function",
             "function": {
                 "name": "read_file",
-                "description": "read file content given path of file",
+                "description": "Read UTF-8 text from a path inside the workspace.",
                 "parameters": {
                     "type": "object",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "path": {"type": "string"}
-                        }
-                    }
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                    "additionalProperties": False,
                 }
             }
         }
@@ -99,6 +97,37 @@ TOOL_REGISTRY = {
                         "path": {"type": "string"},
                         "pattern": {"type": ["string", "null"]},
                     },
+                    "additionalProperties": False,
+                },
+            },
+        },
+    },
+    "apply_patch": {
+        "handler": apply_patch,
+        "schema": {
+            "type": "function",
+            "function": {
+                "name": "apply_patch",
+                "description": "Apply a unified diff inside the workspace after a clean applicability check. The workspace must be the root of a Git repository. Review the result with show_diff.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"patch": {"type": "string"}},
+                    "required": ["patch"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+    },
+    "show_diff": {
+        "handler": show_diff,
+        "schema": {
+            "type": "function",
+            "function": {
+                "name": "show_diff",
+                "description": "Show changed file paths and a bounded diff, including new untracked files, from the workspace Git repository.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
                     "additionalProperties": False,
                 },
             },

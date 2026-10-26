@@ -7,29 +7,44 @@ from pathlib import Path
 WORKSPACE_ROOT = Path.cwd().resolve()
 
 
+def resolve_workspace_path(path):
+    """Resolve a path and reject paths that escape the launch directory."""
+    target = (WORKSPACE_ROOT / Path(path).expanduser()).resolve()
+    if not target.is_relative_to(WORKSPACE_ROOT):
+        raise ValueError("outside_workspace")
+    return target
+
+
 def write_file(path, content, overwrite=False):
-    """Write UTF-8 text to any writable path; relative paths use the current directory."""
+    """Write UTF-8 text to a path inside the workspace."""
     if not isinstance(path, str) or not path.strip() or not isinstance(content, str):
         return _error("invalid_argument", "path and content must be strings")
     if not isinstance(overwrite, bool):
         return _error("invalid_argument", "overwrite must be a boolean")
-    target = Path(path).expanduser().resolve()
-    target.parent.mkdir(parents=True, exist_ok=True)
     try:
+        target = resolve_workspace_path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("w" if overwrite else "x", encoding="utf-8") as file:
             file.write(content)
     except FileExistsError:
         return _error("file_exists", "Set overwrite=true to replace the file")
+    except ValueError:
+        return _error("outside_workspace", "path must stay inside the workspace")
+    except OSError:
+        return _error("write_failed", "Could not write the requested file")
     return {"ok": True, "path": str(target)}
 
 
 def read_file(path):
-    """ read a given file take input as the path of the file"""
+    """Read a UTF-8 text file inside the workspace."""
     try:
-        with open(path, "r") as f:
+        target = resolve_workspace_path(path)
+        with target.open("r", encoding="utf-8") as f:
             return f.read()
-    except Exception as e:
-        return f" Error reading file at '{path}': {e}"
+    except ValueError:
+        return _error("outside_workspace", "path must stay inside the workspace")
+    except (OSError, UnicodeError):
+        return _error("read_failed", "Could not read the requested text file")
 
 def list_files(path=".", pattern=None):
     """List immediate directory entries, optionally matching a filename glob.

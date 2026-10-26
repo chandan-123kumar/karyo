@@ -2,7 +2,7 @@
 
 A terminal coding assistant using `Qwen/Qwen3-Coder-Next` through Hugging Face's
 Featherless AI provider by default. Includes conversation memory, file operations, shell execution,
-and recursive text search.
+recursive text search, workspace-scoped patch application, and diff review.
 
 ## Install
 
@@ -25,8 +25,9 @@ cd your-project
 karyo
 ```
 
-Type `/exit` or press Ctrl+C to quit. This agent can write files and execute shell
-commands with your user permissions; use it in projects you trust and keep backups.
+Type `/exit` or press Ctrl+C to quit. File tools and patch application are limited
+to the launch workspace. Shell commands still run with your user permissions and
+can access other locations; use Karyo in projects you trust and keep backups.
 Native Windows is not supported by the shell tool; use WSL.
 
 Already have uv? Install directly:

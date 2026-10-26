@@ -16,6 +16,7 @@ from cli import main
 from memory.memory import Memory
 from tools.dispatcher import dispatch_tool, dispatch_tool_call
 from tools.registry import TOOL_REGISTRY, get_tool_schemas
+from tools.file_operations import read_file, write_file
 
 
 def response(calls=None, content=None):
@@ -51,6 +52,12 @@ class ToolTests(unittest.TestCase):
         for name, arguments, code in cases:
             with self.subTest(arguments=arguments):
                 self.assertEqual(dispatch_tool(name, arguments)["error"]["code"], code)
+
+    def test_file_read_and_write_reject_workspace_escape(self):
+        self.assertEqual(write_file("../outside-karyo-test", "x")["error"]["code"],
+                         "outside_workspace")
+        self.assertEqual(read_file("../outside-karyo-test")["error"]["code"],
+                         "outside_workspace")
 
     def test_execution_failure_is_a_result(self):
         handler = Mock(side_effect=RuntimeError("private details"))
