@@ -2,7 +2,7 @@
 
 A terminal coding assistant using `Qwen/Qwen3-Coder-Next` through Hugging Face's
 Featherless AI provider by default. Includes conversation memory, file operations, shell execution,
-recursive text search, workspace-scoped patch application, and diff review.
+recursive text search, public web search, workspace-scoped patch application, and diff review.
 
 ## Install
 
