@@ -178,6 +178,32 @@ view it or `/goal <new goal>` to replace it. Model requests keep complete recent
 turns and shorten tool results longer than 6,000 characters; full conversation
 history and tool results remain in memory and session traces.
 
+## MCP tools
+
+Karyo supports Streamable HTTP MCP servers. Configure servers in
+`~/.config/karyo/mcp.json` (or `$XDG_CONFIG_HOME/karyo/mcp.json`). Every server
+must have an explicit `allow_tools` list; only those tools are sent to the model
+and can be called. For example, to expose AWS documentation search and reading:
+
+```json
+{
+  "servers": {
+    "aws-docs": {
+      "transport": "streamable_http",
+      "url": "https://aws-mcp.us-east-1.api.aws/mcp",
+      "allow_tools": [
+        "aws___search_documentation",
+        "aws___read_documentation"
+      ]
+    }
+  }
+}
+```
+
+AWS documentation tools do not need AWS credentials. This first version supports
+unauthenticated HTTPS MCP servers; HTTP auth and local stdio servers are not
+configured yet.
+
 Configuration loads in this order (later values override earlier ones):
 
 1. Packaged `karyo_config/defaults.json`.
