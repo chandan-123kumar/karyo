@@ -137,8 +137,19 @@ karyo logout    # Delete the saved token (does not unset HF_TOKEN or edit .env)
 
 ## Update or uninstall
 
+To update an installation made from GitHub, run:
+
 ```sh
-uv tool upgrade karyo
+karyo --update
+```
+
+This fetches the latest version from `main`. You can also run the underlying
+`uv tool install --refresh --reinstall ...` command if needed. Your saved
+Hugging Face token and Karyo configuration remain in place.
+
+To uninstall:
+
+```sh
 uv tool uninstall karyo
 ```
 

@@ -11,6 +11,33 @@ from tools.dispatcher import dispatch_tool_call
 
 
 MAX_TOOL_ROUNDS = 10
+GITHUB_MAIN_ARCHIVE = "https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip"
+
+
+def update_karyo():
+    """Reinstall the public GitHub main build with the uv installer."""
+    import shutil
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    uv_path = shutil.which("uv")
+    if uv_path is None:
+        # The public installer places Karyo and uv in the same executable dir.
+        executable_dir = Path(sys.argv[0]).absolute().parent
+        candidates = (executable_dir / "uv", executable_dir / "uv.exe")
+        uv_path = next((str(candidate) for candidate in candidates if candidate.is_file()), None)
+    if uv_path is None:
+        print("Cannot locate Karyo's uv installer. Add uv to PATH, then run karyo --update again.")
+        return 1
+    print("Updating Karyo from GitHub main...")
+    result = subprocess.run([
+        uv_path, "tool", "install", "--refresh", "--reinstall", "--python", "3.13",
+        "--from", GITHUB_MAIN_ARCHIVE, "karyo",
+    ], check=False)
+    if result.returncode == 0:
+        print("Karyo is up to date. Restart the command to use the new version.")
+    return result.returncode
 
 
 def main(msg, memory, client=None, usage=None, model=None, max_tokens=None):
@@ -68,6 +95,7 @@ def run():
 
     parser = argparse.ArgumentParser(description="Karyo — a terminal coding assistant")
     parser.add_argument("--version", action="version", version="karyo 0.3.0")
+    parser.add_argument("--update", action="store_true", help="Update Karyo from the latest GitHub main build")
     parser.add_argument("--trace", metavar="PATH", help="Save the session to this JSONL file")
     parser.add_argument("--provider", help="Override the configured inference provider")
     parser.add_argument("--model", help="Override the configured model ID")
@@ -84,6 +112,8 @@ def run():
     serve.add_argument("--port", type=int, default=0, help="Local port (default: automatically chosen)")
     serve.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
+    if args.update:
+        return update_karyo()
     usage = None
     session_status = "closed"
     try:
