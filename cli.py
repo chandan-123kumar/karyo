@@ -247,16 +247,16 @@ def run():
         usage.begin_session()
         config = load_config(args.config)
         usage.event("session_configured", provider=args.provider or config['provider'], model=args.model or config['model'])
-        # from tools.mcp_client import MCPClientManager
-        # mcp_manager = MCPClientManager()
-        # mcp_tools = mcp_manager.start()
-        # for error in mcp_manager.errors:
-        #     print(f"MCP server setup issue ({error['server'] or 'configuration'}): {error['code']}")
-        #     usage.event("mcp_server_error", **error)
-        # if mcp_tools:
-        #     names = [tool["name"] for tool in mcp_tools]
-        #     print(f"MCP catalog: {len(names)} allowlisted tool(s) available for routing.")
-        #     usage.event("mcp_catalog_loaded", tool_count=len(names), tools=names)
+        from tools.mcp_client import MCPClientManager
+        mcp_manager = MCPClientManager()
+        mcp_tools = mcp_manager.start()
+        for error in mcp_manager.errors:
+            print(f"MCP server setup issue ({error['server'] or 'configuration'}): {error['code']}")
+            usage.event("mcp_server_error", **error)
+        if mcp_tools:
+            names = [tool["schema"]["function"]["name"] for tool in mcp_tools]
+            print(f"MCP catalog: {len(names)} allowlisted tool(s) available for routing.")
+            usage.event("mcp_catalog_loaded", tool_count=len(names), tools=names)
         if usage.trace_path:
             print(f"Trace: {usage.trace_path}")
         client = create_client(provider=args.provider or config['provider'], timeout=config['timeout_seconds'])
