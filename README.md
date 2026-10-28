@@ -231,7 +231,7 @@ Configuration loads in this order (later values override earlier ones):
 {
   "provider": "featherless-ai",
   "model": "Qwen/Qwen3-Coder-Next",
-  "max_tokens": 256,
+  "max_tokens": 1024,
   "timeout_seconds": 60
 }
 ```

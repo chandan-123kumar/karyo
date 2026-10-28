@@ -1,6 +1,6 @@
 {
   "model": "Qwen/Qwen3-Coder-Next",
   "provider": "featherless-ai",
-  "max_tokens": 256,
+  "max_tokens": 5000,
   "timeout_seconds": 60
 }

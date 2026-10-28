@@ -18,17 +18,6 @@ MAX_TEMP_FILES_PER_SESSION = 50
 MAX_TOOL_EXECUTION_SECONDS = 30
 BOUNDED_TARGETS = ("search_files", "run_shell", "write_temp_file")
 
-TEMP_FILE_PARAMETERS = {
-    "type": "object",
-    "properties": {
-        "path": {"type": "string", "description": "Relative path inside the private session temp directory."},
-        "content": {"type": "string", "description": "UTF-8 file contents, up to 1 MB."},
-        "overwrite": {"type": "boolean", "description": "Replace an existing temp file; defaults to false."},
-    },
-    "required": ["path", "content"],
-    "additionalProperties": False,
-}
-
 DEFINE_TEMPORARY_TOOL = "define_temporary_tool"
 DEFINE_TEMPORARY_TOOL_SCHEMA = {
     "type": "function",
@@ -140,8 +129,8 @@ class TemporaryToolRegistry:
                 return {"ok": False, "error": {"code": "missing_argument", "argument": key}}
         target_name = entry["target_tool"]
         if target_name == "write_temp_file":
-            target_parameters = TEMP_FILE_PARAMETERS["properties"]
-            target_handler = self._write_temp_file
+            target_parameters = TOOL_REGISTRY[target_name]["schema"]["function"]["parameters"]["properties"]
+            target_handler = self.write_temp_file
         else:
             target = TOOL_REGISTRY[target_name]
             target_parameters = target["schema"]["function"]["parameters"]["properties"]
@@ -163,7 +152,7 @@ class TemporaryToolRegistry:
         success = not (isinstance(result, dict) and result.get("ok") is False)
         return {"ok": success, "target_tool": target_name, "result": result}
 
-    def _write_temp_file(self, path, content, overwrite=False):
+    def write_temp_file(self, path, content, overwrite=False):
         if (not isinstance(path, str) or not path.strip() or Path(path).is_absolute()
                 or not isinstance(content, str) or not isinstance(overwrite, bool)):
             return {"ok": False, "error": {"code": "invalid_argument"}}
@@ -226,8 +215,7 @@ class TemporaryToolRegistry:
         if len(json.dumps(fixed, ensure_ascii=False)) > MAX_FIXED_ARGUMENTS_CHARS:
             raise ValueError(f"fixed_arguments must be at most {MAX_FIXED_ARGUMENTS_CHARS} characters")
 
-        parameters = (TEMP_FILE_PARAMETERS if target_name == "write_temp_file"
-                      else TOOL_REGISTRY[target_name]["schema"]["function"]["parameters"])
+        parameters = TOOL_REGISTRY[target_name]["schema"]["function"]["parameters"]
         target_properties = parameters["properties"]
         if set(exposed) & set(fixed):
             raise ValueError("an argument cannot be both exposed and fixed")

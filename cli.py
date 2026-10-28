@@ -17,7 +17,7 @@ from tools.temporary import (
 from tools.temporary_files import bind_temporary_file_writer, reset_temporary_file_writer
 
 
-MAX_TOOL_ROUNDS = 10
+MAX_TOOL_ROUNDS = 20
 GITHUB_MAIN_ARCHIVE = "https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip"
 BASE_SYSTEM_PROMPT = """You are Karyo, a coding assistant working in the user's current workspace.
 
