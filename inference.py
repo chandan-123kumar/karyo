@@ -8,7 +8,31 @@ from karyo_config import load_config
 
 def error_details(exc):
     """Safe diagnostics: never include request headers, credentials or raw bodies."""
-    status = getattr(getattr(exc, "response", None), "status_code", None)
+    # SDKs may wrap the HTTP exception (or raise a parsing error while handling
+    # it). Walk the exception chain so an underlying 401/403 isn't lost.
+    current = exc
+    seen = set()
+    status = None
+    cause_type = None
+    network_error = False
+    network_types = {
+        "RequestError", "NetworkError", "TransportError", "ConnectError",
+        "ConnectTimeout", "ReadTimeout", "WriteTimeout", "PoolTimeout",
+        "TimeoutException",
+    }
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        response = getattr(current, "response", None)
+        candidate = getattr(response, "status_code", None)
+        if isinstance(candidate, int):
+            status = candidate
+            break
+        if cause_type is None and current is not exc:
+            cause_type = type(current).__name__
+        if any(cls.__name__ in network_types for cls in type(current).mro()):
+            network_error = True
+        current = current.__cause__ or current.__context__
+
     messages = {
         400: "The provider rejected the request. Check model settings and tool schemas.",
         401: "Authentication failed. Run karyo login and check HF_TOKEN overrides.",
@@ -21,11 +45,14 @@ def error_details(exc):
     if message is None:
         if isinstance(status, int) and status >= 500:
             message = "The inference service failed. Retry later."
-        elif isinstance(exc, OSError):
-            message = "A local file or network operation failed. Check permissions and connectivity."
+        elif network_error or isinstance(exc, OSError):
+            message = "Could not reach Hugging Face or the selected provider. Check network access and proxy settings."
         else:
             message = "Request failed. Check the error type and trace for the failing call."
-    return {"type": type(exc).__name__, "http_status": status if isinstance(status, int) else None, "message": message}
+    details = {"type": type(exc).__name__, "http_status": status, "message": message}
+    if cause_type is not None:
+        details["cause_type"] = cause_type
+    return details
 
 def create_client(provider=None, timeout=None):
     if provider is None or timeout is None:

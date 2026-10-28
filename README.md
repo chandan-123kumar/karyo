@@ -204,6 +204,22 @@ AWS documentation tools do not need AWS credentials. This first version supports
 unauthenticated HTTPS MCP servers; HTTP auth and local stdio servers are not
 configured yet.
 
+## Temporary tools
+
+During a session, Karyo can propose a temporary wrapper around `search_files`,
+`run_shell`, or `write_temp_file`. The CLI shows the proposed name, description,
+target, arguments, and fixed values, then requires explicit user approval before
+adding it to the model's tool catalog. Approved wrappers remain in memory until
+the session ends; no tool code or definition is persisted. A session can create
+at most five temporary tools, and each invocation is capped at 30 seconds.
+The bounded `write_temp_file` tool is also available directly for scratch files;
+it uses the same session-owned temporary directory.
+Temporary tools use bounded handlers; they do not execute model-generated
+Python code. `write_temp_file` writes only inside a private session directory
+under `/tmp`, limits each file to 1 MB, total temporary storage to 5 MB, and the
+writer to 50 managed files. Karyo removes the directory when the session ends.
+Shell wrappers still run with the user's permissions.
+
 Configuration loads in this order (later values override earlier ones):
 
 1. Packaged `karyo_config/defaults.json`.
