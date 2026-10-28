@@ -33,7 +33,7 @@ Native Windows is not supported by the shell tool; use WSL.
 Already have uv? Install directly:
 
 ```sh
-uv tool install --python 3.13 --from https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip karyo
+uv tool install --no-cache --refresh --reinstall --python 3.13 --from https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip karyo
 uv tool update-shell
 ```
 

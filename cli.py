@@ -78,7 +78,7 @@ def update_karyo():
         return 1
     print("Updating Karyo from GitHub main...")
     result = subprocess.run([
-        uv_path, "tool", "install", "--refresh", "--reinstall", "--python", "3.13",
+        uv_path, "tool", "install", "--no-cache", "--refresh", "--reinstall", "--python", "3.13",
         "--from", GITHUB_MAIN_ARCHIVE, "karyo",
     ], check=False)
     if result.returncode == 0:
@@ -181,6 +181,7 @@ def main(msg, memory, client=None, usage=None, model=None, max_tokens=None,
 
 def run():
     import argparse
+    import sys
     from harness_auth import login, logout, LoginError
 
     def approve_temporary_tool(definition):
@@ -232,7 +233,16 @@ def run():
             print("Saved token removed. HF_TOKEN environment variables and .env files are unchanged.")
             return 0
         memory = Memory()
-        temporary_writer_token = bind_temporary_file_writer(temporary_tools.write_temp_file)
+        temporary_writer = getattr(temporary_tools, "write_temp_file", None)
+        if not callable(temporary_writer):
+            print(
+                "Karyo's installation contains mismatched files. Reinstall the latest build with:\n"
+                "uv tool install --no-cache --refresh --reinstall --python 3.13 "
+                "--from https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip karyo",
+                file=sys.stderr,
+            )
+            return 1
+        temporary_writer_token = bind_temporary_file_writer(temporary_writer)
         usage = TokenUsage(args.trace, include_content=True)
         usage.begin_session()
         config = load_config(args.config)

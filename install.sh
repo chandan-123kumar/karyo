@@ -13,7 +13,7 @@ if ! command -v uv >/dev/null 2>&1; then
   sh "$installer"
   export PATH="$HOME/.local/bin:$PATH"
 fi
-uv tool install --refresh --reinstall --python 3.13 --from 'https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip' karyo
+uv tool install --no-cache --refresh --reinstall --python 3.13 --from 'https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip' karyo
 uv tool update-shell
 bin_dir=$(uv tool dir --bin)
 echo 'Karyo installed. Connecting your Hugging Face account…'
