@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
   <title id="title">Karyo coding assistant architecture</title>
-  <desc id="desc">Architecture diagram showing the local CLI and orchestration loop, context and memory, model inference through Hugging Face, built-in and optional MCP tools, local configuration, credentials, traces, and trust boundaries.</desc>
+  <desc id="desc">Architecture diagram showing Karyo's terminal commands and approval prompts, SQLite-backed resumable conversations and durable memories, memory retrieval into model context, remote inference, tools, traces, and trust boundaries.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f9fc"/><stop offset="1" stop-color="#edf2f8"/></linearGradient>
     <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#172b4d"/><stop offset="1" stop-color="#24466f"/></linearGradient>
@@ -35,22 +35,22 @@
   <rect x="80" y="198" width="210" height="112" rx="15" class="card"/>
   <circle cx="106" cy="225" r="12" fill="#dbeafe"/><text x="106" y="230" text-anchor="middle" class="tag" fill="#2368a7">1</text>
   <text x="128" y="231" class="h">Terminal user</text>
-  <text x="100" y="260" class="body">Prompt · /goal · /usage</text>
-  <text x="100" y="282" class="body">/login · /trace · /exit</text>
+  <text x="100" y="260" class="body">Prompt · /help · /resume</text>
+  <text x="100" y="282" class="body">/remember · /memories · /forget</text>
 
   <rect x="340" y="198" width="326" height="148" rx="15" fill="url(#navy)" filter="url(#shadow)"/>
   <circle cx="368" cy="225" r="12" fill="#91c4f4"/><text x="368" y="230" text-anchor="middle" class="tag" fill="#173552">2</text>
   <text x="390" y="231" class="h white">CLI + session orchestrator</text>
   <text x="362" y="261" class="body white">Reads commands; owns session lifecycle</text>
-  <text x="362" y="284" class="body white">Builds requests; routes tool calls</text>
+  <text x="362" y="284" class="body white">Routes tools; prompts before saving memories</text>
   <text x="362" y="317" class="small white">cli.py · max 20 model/tool rounds per turn</text>
 
   <rect x="716" y="198" width="352" height="148" rx="15" class="card"/>
   <circle cx="744" cy="225" r="12" fill="#dbeafe"/><text x="744" y="230" text-anchor="middle" class="tag" fill="#2368a7">3</text>
   <text x="766" y="231" class="h">Context builder + memory</text>
-  <text x="738" y="261" class="body">In-memory conversation and session goal</text>
-  <text x="738" y="284" class="body">System instructions + last 4 complete turns</text>
-  <text x="738" y="307" class="body">Long tool results shortened to 6,000 chars</text>
+  <text x="738" y="261" class="body">Session history, goal, and resumed turns</text>
+  <text x="738" y="284" class="body">Relevant durable facts enter as reference</text>
+  <text x="738" y="307" class="body">Last 4 turns · tool results capped at 6,000</text>
   <text x="738" y="329" class="small">context_builder.py · memory/memory.py</text>
 
   <path d="M290 254H333" class="lineBlue"/>
@@ -140,18 +140,18 @@
   <text x="88" y="1031" class="small">Browser setup binds to loopback; terminal login supported</text>
 
   <rect x="430" y="896" width="366" height="160" rx="16" class="card"/>
-  <text x="454" y="929" class="h">Session trace store</text>
-  <text x="454" y="957" class="body">JSONL events: prompts, requests, tool I/O, timing</text>
-  <text x="454" y="980" class="body">Token counts + safe error metadata</text>
-  <text x="454" y="1003" class="body">~/.local/share/karyo/traces · owner-only file</text>
-  <text x="454" y="1031" class="small">Conversation content can contain sensitive data</text>
+  <text x="454" y="929" class="h">SQLite memory store</text>
+  <text x="454" y="957" class="body">Project conversations · resume with /resume</text>
+  <text x="454" y="980" class="body">Durable facts: project or global scope</text>
+  <text x="454" y="1003" class="body">/remember · /memories · /forget</text>
+  <text x="454" y="1031" class="small">~/.local/share/karyo/memory.sqlite3 · local</text>
 
   <rect x="820" y="896" width="342" height="160" rx="16" class="card"/>
-  <text x="844" y="929" class="h">Local trace viewer</text>
-  <text x="844" y="957" class="body">Separate command: karyo trace serve</text>
-  <text x="844" y="980" class="body">Read-only · 127.0.0.1 · secret URL</text>
-  <text x="844" y="1003" class="body">Reads JSONL and refreshes the dashboard</text>
-  <text x="844" y="1031" class="small">Does not resume chat memory after restart</text>
+  <text x="844" y="929" class="h">Traces &amp; local viewer</text>
+  <text x="844" y="957" class="body">JSONL requests, tool I/O, usage, and events</text>
+  <text x="844" y="980" class="body">karyo trace serve · loopback dashboard</text>
+  <text x="844" y="1003" class="body">Replay recorded questions in a new session</text>
+  <text x="844" y="1031" class="small">~/.local/share/karyo/traces · owner-only files</text>
 
   <rect x="1186" y="896" width="350" height="160" rx="16" fill="#fff9eb" stroke="#ecd9aa" stroke-width="1.4"/>
   <text x="1210" y="929" class="h">Trust boundary</text>
@@ -162,7 +162,9 @@
 
   <path d="M244 346V858H236V888" class="line dashed"/>
   <path d="M470 588V852H613V888" class="line dashed"/>
+  <path d="M1068 320H1112V850H780V888" class="lineBlue"/>
+  <text x="908" y="843" class="small">persist · resume · retrieve</text>
   <path d="M875 588V858H991V888" class="line dashed"/>
-  <text x="64" y="1091" class="small">Karyo is a local Python CLI (Python 3.10+). The model is remote; conversation memory and trace files are local.</text>
+  <text x="64" y="1091" class="small">Karyo is a local Python CLI (Python 3.10+). SQLite memory and JSONL traces stay local; retrieved memories are sent with relevant model requests.</text>
   <text x="1536" y="1091" text-anchor="end" class="small">Source: repository implementation</text>
 </svg>

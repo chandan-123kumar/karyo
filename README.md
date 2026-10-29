@@ -105,13 +105,37 @@ IDs to relate events. Failed requests include safe diagnostic metadata. Missing
 usage is `null`, not zero. Inputs are SDK-level arguments, not the provider's
 internal prompt template. `jq . path/to/session.jsonl` provides a readable view.
 
-The viewer is read-only, binds to `127.0.0.1`, and requires its temporary secret
-URL. `--no-browser` disables automatic opening and `--port 8765` chooses a port.
+The viewer binds to `127.0.0.1` and requires its temporary secret URL. Its replay
+button starts inference only when clicked. `--no-browser` disables automatic
+opening and `--port 8765` chooses a port.
 Ctrl+C stops the viewer independently of Karyo. It reads `.jsonl` files directly
 in the selected directory, supports older traces, and skips incomplete lines.
 This first version reloads files on each poll; separate large archives into
-another directory. Recording sessions does not automatically resume conversation
-memory when Karyo restarts.
+another directory. Conversation history is also saved in a local SQLite database
+at `~/.local/share/karyo/memory.sqlite3` (or `$XDG_DATA_HOME/karyo/memory.sqlite3`).
+Histories are scoped to the project directory and stored with owner-only file
+permissions. Use `/resume` at the start of a Karyo session to load the latest
+conversation for the current project. New turns are saved automatically. The
+database stays local and is separate from JSONL traces. Retrieved facts are sent
+to the configured model as part of its request, and may also appear in traces.
+
+The same database stores durable memories separately from conversations.
+`/remember <fact>` saves a project-specific fact; `/remember --global <fact>`
+saves a preference shared across projects. `/memories` lists visible facts and
+`/forget <id>` deletes one. Karyo can also propose a durable fact when one may
+help future sessions, but asks before saving it. Relevant project facts and
+global preferences are added to model context as reference data.
+The terminal shows a `/help` hint at startup and suggests relevant commands when
+you ask about saved memories or resuming. Phrases such as “remember that I prefer
+...” trigger a project/global/skip prompt before Karyo handles the request.
+
+Select a session's **Conversation** view and click **Replay questions in a new
+session** to run its recorded user questions in order with fresh conversation
+memory. Replay uses the current workspace tools and saved provider credentials,
+and can incur provider charges or perform actions through tools. It writes a new
+trace linked from the original session. Start the trace viewer from the original
+session's project directory; replay is disabled for traces from other projects.
+Replays use the provider/model captured in the original session when available.
 
 ## Credentials
 
@@ -170,7 +194,8 @@ uv build
 ```
 
 The CLI operates in the directory where you launch it. Conversation memory lasts
-for the current session.
+for the current session unless you load a saved project conversation with
+`/resume`. Durable memories are loaded separately when relevant.
 
 Karyo keeps the first nonempty request as the session goal and includes it in
 model context after it falls outside the recent four-turn window. Use `/goal` to
