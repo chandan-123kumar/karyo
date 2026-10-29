@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Karyo coding assistant architecture</title>
+  <desc id="desc">Architecture diagram showing the local CLI and orchestration loop, context and memory, model inference through Hugging Face, built-in and optional MCP tools, local configuration, credentials, traces, and trust boundaries.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f9fc"/><stop offset="1" stop-color="#edf2f8"/></linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#172b4d"/><stop offset="1" stop-color="#24466f"/></linearGradient>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="145%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#13233a" flood-opacity=".10"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#49627e"/></marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2878c7"/></marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#168568"/></marker>
+    <style>
+      text{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#1b2b40}
+      .title{font-size:34px;font-weight:750;letter-spacing:-.5px}.subtitle{font-size:16px;fill:#607187}
+      .section{font-size:13px;font-weight:750;letter-spacing:1.2px;fill:#63758a}
+      .h{font-size:18px;font-weight:700}.body{font-size:14px;fill:#51647a}.small{font-size:12px;fill:#63758a}
+      .tag{font-size:11px;font-weight:700;letter-spacing:.5px}.white{fill:#fff}.card{fill:#fff;stroke:#d7e0ea;stroke-width:1.4;filter:url(#shadow)}
+      .line{fill:none;stroke:#49627e;stroke-width:2.2;marker-end:url(#arrow)}
+      .lineBlue{fill:none;stroke:#2878c7;stroke-width:2.5;marker-end:url(#arrowBlue)}
+      .lineGreen{fill:none;stroke:#168568;stroke-width:2.2;marker-end:url(#arrowGreen)}
+      .dashed{stroke-dasharray:7 6}
+    </style>
+  </defs>
+  <rect width="1600" height="1120" fill="url(#bg)"/>
+  <text x="64" y="66" class="title">Karyo · terminal coding assistant</text>
+  <text x="64" y="96" class="subtitle">Local orchestration, remote model inference, and controlled tool execution</text>
+  <rect x="1320" y="46" width="216" height="34" rx="17" fill="#e0eaf5"/>
+  <text x="1428" y="68" text-anchor="middle" class="tag" fill="#315476">SYSTEM ARCHITECTURE</text>
+
+  <!-- Main local runtime boundary -->
+  <rect x="48" y="132" width="1080" height="700" rx="22" fill="#f9fbfd" stroke="#9fb2c7" stroke-width="1.7" stroke-dasharray="9 7"/>
+  <rect x="70" y="116" width="245" height="34" rx="17" fill="#e4ebf3"/>
+  <text x="192" y="138" text-anchor="middle" class="tag" fill="#45617e">USER MACHINE · PYTHON RUNTIME</text>
+
+  <text x="80" y="178" class="section">INTERACTION &amp; ORCHESTRATION</text>
+  <rect x="80" y="198" width="210" height="112" rx="15" class="card"/>
+  <circle cx="106" cy="225" r="12" fill="#dbeafe"/><text x="106" y="230" text-anchor="middle" class="tag" fill="#2368a7">1</text>
+  <text x="128" y="231" class="h">Terminal user</text>
+  <text x="100" y="260" class="body">Prompt · /goal · /usage</text>
+  <text x="100" y="282" class="body">/login · /trace · /exit</text>
+
+  <rect x="340" y="198" width="326" height="148" rx="15" fill="url(#navy)" filter="url(#shadow)"/>
+  <circle cx="368" cy="225" r="12" fill="#91c4f4"/><text x="368" y="230" text-anchor="middle" class="tag" fill="#173552">2</text>
+  <text x="390" y="231" class="h white">CLI + session orchestrator</text>
+  <text x="362" y="261" class="body white">Reads commands; owns session lifecycle</text>
+  <text x="362" y="284" class="body white">Builds requests; routes tool calls</text>
+  <text x="362" y="317" class="small white">cli.py · max 20 model/tool rounds per turn</text>
+
+  <rect x="716" y="198" width="352" height="148" rx="15" class="card"/>
+  <circle cx="744" cy="225" r="12" fill="#dbeafe"/><text x="744" y="230" text-anchor="middle" class="tag" fill="#2368a7">3</text>
+  <text x="766" y="231" class="h">Context builder + memory</text>
+  <text x="738" y="261" class="body">In-memory conversation and session goal</text>
+  <text x="738" y="284" class="body">System instructions + last 4 complete turns</text>
+  <text x="738" y="307" class="body">Long tool results shortened to 6,000 chars</text>
+  <text x="738" y="329" class="small">context_builder.py · memory/memory.py</text>
+
+  <path d="M290 254H333" class="lineBlue"/>
+  <path d="M666 272H708" class="lineBlue"/>
+  <path d="M716 320H683V370H500V354" class="line dashed"/>
+  <text x="600" y="365" class="small">prepared messages</text>
+
+  <text x="80" y="396" class="section">MODEL REQUEST / RESPONSE LOOP</text>
+  <rect x="80" y="418" width="404" height="170" rx="15" class="card"/>
+  <text x="104" y="451" class="h">Inference adapter</text>
+  <text x="104" y="479" class="body">Hugging Face InferenceClient</text>
+  <text x="104" y="502" class="body">Provider + model from layered config</text>
+  <text x="104" y="525" class="body">Default: Featherless AI · Qwen3-Coder-Next</text>
+  <text x="104" y="559" class="small">inference.py · timeout + safe error mapping</text>
+
+  <rect x="548" y="418" width="520" height="170" rx="15" fill="#eef6ff" stroke="#bdd6ef" stroke-width="1.4"/>
+  <text x="574" y="451" class="h">Request payload</text>
+  <text x="574" y="479" class="body">Model · bounded context · tool schemas · max_tokens</text>
+  <text x="574" y="502" class="body">Built-in tools + approved temporary tools + MCP allowlist</text>
+  <text x="574" y="525" class="body">Response: text, or structured tool calls</text>
+  <text x="574" y="559" class="small">Provider-reported token usage recorded per request</text>
+
+  <path d="M440 346V405" class="lineBlue"/>
+  <path d="M484 500H540" class="lineBlue"/>
+  <path d="M818 418V354" class="lineBlue"/>
+  <text x="833" y="385" class="small">context + schemas</text>
+
+  <rect x="80" y="628" width="988" height="158" rx="15" fill="#f1f8f6" stroke="#b9ddd2" stroke-width="1.4"/>
+  <text x="106" y="661" class="h">Tool routing and execution</text>
+  <rect x="106" y="682" width="270" height="76" rx="11" fill="#fff" stroke="#cfe3dc"/>
+  <text x="124" y="710" class="body" font-weight="700">Built-in registry</text>
+  <text x="124" y="735" class="small">Files · search · shell · patch/diff · web</text>
+  <rect x="396" y="682" width="284" height="76" rx="11" fill="#fff" stroke="#cfe3dc"/>
+  <text x="414" y="710" class="body" font-weight="700">Temporary wrappers</text>
+  <text x="414" y="735" class="small">Bounded targets · explicit user approval</text>
+  <rect x="700" y="682" width="338" height="76" rx="11" fill="#fff" stroke="#cfe3dc"/>
+  <text x="718" y="710" class="body" font-weight="700">MCP client · Streamable HTTP</text>
+  <text x="718" y="735" class="small">HTTPS only · configured allow_tools list</text>
+  <path d="M810 588V615H238V674" class="lineGreen"/>
+  <text x="510" y="611" class="small">tool call → dispatch</text>
+  <path d="M238 760V800H440V354" class="lineGreen dashed"/>
+  <text x="252" y="818" class="small">tool result appended to memory → next model round</text>
+
+  <!-- External services -->
+  <text x="1170" y="178" class="section">EXTERNAL SERVICES</text>
+  <rect x="1170" y="198" width="366" height="184" rx="18" fill="#fff" stroke="#c6d6e6" stroke-width="1.4" filter="url(#shadow)"/>
+  <rect x="1170" y="198" width="366" height="43" rx="18" fill="#e9f3ff"/>
+  <path d="M1170 223v18h366v-18" fill="#e9f3ff"/>
+  <text x="1195" y="226" class="h">Hugging Face</text>
+  <text x="1195" y="270" class="body">Inference API / selected provider</text>
+  <text x="1195" y="296" class="body">Validates token during login</text>
+  <text x="1195" y="322" class="body">Provider handles model execution</text>
+  <text x="1195" y="353" class="small">Billing and model access depend on account/provider</text>
+  <path d="M1068 478H1148V288H1162" class="lineBlue"/>
+  <text x="1080" y="464" class="small">HTTPS API</text>
+  <path d="M1164 340H1100V535H1076" class="line dashed"/>
+  <text x="1096" y="555" class="small">response + usage</text>
+
+  <rect x="1170" y="418" width="366" height="169" rx="18" fill="#fff" stroke="#c6d6e6" stroke-width="1.4" filter="url(#shadow)"/>
+  <rect x="1170" y="418" width="366" height="43" rx="18" fill="#eaf7f2"/>
+  <path d="M1170 443v18h366v-18" fill="#eaf7f2"/>
+  <text x="1195" y="446" class="h">Optional MCP servers</text>
+  <text x="1195" y="490" class="body">External tools configured by the user</text>
+  <text x="1195" y="516" class="body">Only explicitly allowlisted tools exposed</text>
+  <text x="1195" y="542" class="body">Results treated as untrusted data</text>
+  <text x="1195" y="568" class="small">HTTPS Streamable HTTP · no local stdio/auth yet</text>
+  <path d="M1038 720H1148V503H1162" class="lineGreen"/>
+  <text x="1062" y="704" class="small">MCP call</text>
+  <path d="M1164 554H1118V774H1046" class="line dashed"/>
+
+  <rect x="1170" y="620" width="366" height="166" rx="18" fill="#fff" stroke="#c6d6e6" stroke-width="1.4" filter="url(#shadow)"/>
+  <rect x="1170" y="620" width="366" height="43" rx="18" fill="#f2edff"/>
+  <path d="M1170 645v18h366v-18" fill="#f2edff"/>
+  <text x="1195" y="648" class="h">Install &amp; update path</text>
+  <text x="1195" y="692" class="body">GitHub main ZIP → uv tool install</text>
+  <text x="1195" y="718" class="body">Isolated Python tool environment</text>
+  <text x="1195" y="744" class="body">Installer bootstraps uv when missing</text>
+  <text x="1195" y="770" class="small">karyo --update reinstalls from GitHub main</text>
+
+  <!-- Local persistence and identity -->
+  <text x="64" y="875" class="section">LOCAL STATE &amp; OPERATIONS</text>
+  <rect x="64" y="896" width="342" height="160" rx="16" class="card"/>
+  <text x="88" y="929" class="h">Identity &amp; configuration</text>
+  <text x="88" y="957" class="body">Token precedence: HF_TOKEN → .env → saved token</text>
+  <text x="88" y="980" class="body">Saved under ~/.config/karyo/ (0600 permissions)</text>
+  <text x="88" y="1003" class="body">Defaults → user config → project config → CLI</text>
+  <text x="88" y="1031" class="small">Browser setup binds to loopback; terminal login supported</text>
+
+  <rect x="430" y="896" width="366" height="160" rx="16" class="card"/>
+  <text x="454" y="929" class="h">Session trace store</text>
+  <text x="454" y="957" class="body">JSONL events: prompts, requests, tool I/O, timing</text>
+  <text x="454" y="980" class="body">Token counts + safe error metadata</text>
+  <text x="454" y="1003" class="body">~/.local/share/karyo/traces · owner-only file</text>
+  <text x="454" y="1031" class="small">Conversation content can contain sensitive data</text>
+
+  <rect x="820" y="896" width="342" height="160" rx="16" class="card"/>
+  <text x="844" y="929" class="h">Local trace viewer</text>
+  <text x="844" y="957" class="body">Separate command: karyo trace serve</text>
+  <text x="844" y="980" class="body">Read-only · 127.0.0.1 · secret URL</text>
+  <text x="844" y="1003" class="body">Reads JSONL and refreshes the dashboard</text>
+  <text x="844" y="1031" class="small">Does not resume chat memory after restart</text>
+
+  <rect x="1186" y="896" width="350" height="160" rx="16" fill="#fff9eb" stroke="#ecd9aa" stroke-width="1.4"/>
+  <text x="1210" y="929" class="h">Trust boundary</text>
+  <text x="1210" y="957" class="body">File + patch paths are workspace-scoped</text>
+  <text x="1210" y="980" class="body">Shell runs as the user within workspace cwd</text>
+  <text x="1210" y="1003" class="body">Shell commands retain user permissions</text>
+  <text x="1210" y="1031" class="small">Temporary wrappers need approval; max 5 per session</text>
+
+  <path d="M244 346V858H236V888" class="line dashed"/>
+  <path d="M470 588V852H613V888" class="line dashed"/>
+  <path d="M875 588V858H991V888" class="line dashed"/>
+  <text x="64" y="1091" class="small">Karyo is a local Python CLI (Python 3.10+). The model is remote; conversation memory and trace files are local.</text>
+  <text x="1536" y="1091" text-anchor="end" class="small">Source: repository implementation</text>
+</svg>
