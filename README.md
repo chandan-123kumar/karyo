@@ -203,6 +203,29 @@ view it or `/goal <new goal>` to replace it. Model requests keep complete recent
 turns and shorten tool results longer than 6,000 characters; full conversation
 history and tool results remain in memory and session traces.
 
+## GitHub through gh
+
+Karyo can use GitHub CLI through its existing shell tool when a suitable GitHub
+MCP tool is unavailable, or when you explicitly ask it to use `gh`. Install
+[GitHub CLI](https://cli.github.com/), then authenticate in your own terminal:
+
+```sh
+gh auth login
+gh auth status
+```
+
+Launch Karyo from a terminal where `gh` is on PATH. For example, ask "List my
+GitHub repositories" or "Read issue 42 in OWNER/REPO using gh". Karyo is
+instructed to check availability and authentication, discover your username,
+use structured results, and distinguish owned repositories from all repositories
+your account can access. No MCP configuration or separate Karyo token is needed.
+Interactive login and permission changes must be completed in your own terminal.
+
+This routing and confirmation guidance is model-driven, not a shell permission
+boundary. The shell tool retains your user permissions and does not enforce
+per-command approval. Do not expose credentials in commands or tool output,
+which are recorded in session traces.
+
 ## MCP tools
 
 Karyo supports Streamable HTTP MCP servers. Configure servers in
