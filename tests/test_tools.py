@@ -92,9 +92,9 @@ class ToolTests(unittest.TestCase):
             main("What did I ask?", memory, client)
         messages = requests[1]["messages"]
         self.assertEqual([message["role"] for message in messages],
-                         ["user", "assistant", "tool", "tool"])
-        self.assertEqual(messages[2]["tool_call_id"], "call_1")
-        self.assertEqual(messages[3]["tool_call_id"], "call_2")
+                         ["system", "user", "assistant", "tool", "tool"])
+        self.assertEqual(messages[3]["tool_call_id"], "call_1")
+        self.assertEqual(messages[4]["tool_call_id"], "call_2")
         self.assertIn("tools", requests[0])
         self.assertEqual(requests[2]["messages"][-2]["content"], "Here are the files.")
 

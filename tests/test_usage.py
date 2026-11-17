@@ -42,9 +42,10 @@ class UsageTests(unittest.TestCase):
             memory.save_to_memory("user", "Later message")
             first.choices[0].message.content = "Changed later"
             records = [json.loads(line) for line in path.read_text().splitlines() if json.loads(line).get("event") == "finished"]
-        self.assertEqual(records[0]["input"]["messages"], [{"role": "user", "content": "List files"}])
+        self.assertEqual(records[0]["input"]["messages"][0]["role"], "system")
+        self.assertEqual(records[0]["input"]["messages"][1:], [{"role": "user", "content": "List files"}])
         self.assertIn("tools", records[0]["input"])
-        self.assertEqual([m["role"] for m in records[1]["input"]["messages"]], ["user", "assistant", "tool"])
+        self.assertEqual([m["role"] for m in records[1]["input"]["messages"]], ["system", "user", "assistant", "tool"])
         self.assertEqual(records[0]["output"]["choices"][0]["message"]["tool_calls"][0]["function"]["name"], "missing")
         self.assertEqual(records[1]["output"]["choices"][0]["message"]["content"], "Done")
         self.assertIsNone(tracker.records[0]["output"]["choices"][0]["message"]["content"])
@@ -56,7 +57,8 @@ class UsageTests(unittest.TestCase):
         tracker.include_content = True
         with redirect_stderr(StringIO()), self.assertRaises(RuntimeError):
             main("Hello", Memory(), client, tracker)
-        self.assertEqual(tracker.records[0]["input"]["messages"][0]["content"], "Hello")
+        self.assertEqual(tracker.records[0]["input"]["messages"][0]["role"], "system")
+        self.assertEqual(tracker.records[0]["input"]["messages"][1]["content"], "Hello")
         self.assertIsNone(tracker.records[0]["output"])
         self.assertNotIn("private error", json.dumps(tracker.records))
 

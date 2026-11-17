@@ -1,6 +1,6 @@
 # Karyo
 
-A terminal coding assistant using `Qwen/Qwen3-Coder-Next` through Hugging Face's
+A terminal assistant with coding, general, and investing profiles, using `Qwen/Qwen3-Coder-Next` through Hugging Face's
 Featherless AI provider by default. Includes conversation memory, file operations, shell execution,
 recursive text search, public web search, workspace-scoped patch application, and diff review.
 
@@ -202,6 +202,57 @@ model context after it falls outside the recent four-turn window. Use `/goal` to
 view it or `/goal <new goal>` to replace it. Model requests keep complete recent
 turns and shorten tool results longer than 6,000 characters; full conversation
 history and tool results remain in memory and session traces.
+
+## Task profiles
+
+Choose a profile at launch (the default is `coding`):
+
+```sh
+karyo --profile coding
+karyo --profile general
+karyo --profile investing
+```
+
+`coding` focuses on code changes and verification. `general` supports research,
+planning, analysis, and writing. `investing` focuses on sourced investment
+research, screening, portfolio analysis, and calculations, with explicit data
+dates and assumptions. It instructs the model not to execute trades or move funds.
+Profiles use the same existing tools and model; they do not add market-data or
+brokerage integrations, change credentials, or enforce shell permissions.
+
+Set a default and optional parameters in `config.json` or
+`~/.config/karyo/config.json` (or `$XDG_CONFIG_HOME/karyo/config.json`):
+
+```json
+{
+  "profile": "investing",
+  "profiles": {
+    "investing": {
+      "market": "India",
+      "currency": "INR",
+      "objective": "long-term research",
+      "horizon_years": 5,
+      "risk_tolerance": "moderate",
+      "screen": {
+        "max_debt_to_equity": 0.5,
+        "min_revenue_growth_pct": 10
+      }
+    },
+    "general": {"language": "English"}
+  }
+}
+```
+
+These are illustrative research criteria, not recommended investments. Parameters
+are flexible JSON reference data for the model, not an executable screening
+engine; only the selected profile's parameters are sent. Never put credentials
+in parameters, which appear in traces. Configuration precedence is packaged
+defaults, user configuration, then project configuration (or `--config PATH`).
+Parameter keys merge within each profile; nested values such as `screen` are
+replaced as a whole. `--profile` overrides the configured profile. The active
+profile appears at startup and is recorded with its parameters for trace replay.
+Restart Karyo to change profiles; `/resume` loads the previous conversation into
+the currently selected profile.
 
 ## GitHub through gh
 
