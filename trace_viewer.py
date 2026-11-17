@@ -168,9 +168,13 @@ def replay_session(directory, source):
         configured = next((e for e in source['events'] if e.get('event') == 'session_configured'), {})
         provider = configured.get('provider', config['provider'])
         model = configured.get('model', config['model'])
+        recorded_profile = next((e for e in source['events'] if e.get('event') == 'profile_configured'), {})
+        profile = recorded_profile.get('profile', config['profile'])
+        parameters = recorded_profile.get('parameters', config['profiles'].get(profile, {}))
         from uuid import uuid4
         usage = TokenUsage(Path(directory) / (str(uuid4()) + '.jsonl'), include_content=True)
         usage.begin_session()
+        usage.event('profile_configured', profile=profile, parameters=parameters)
         usage.event('replay_started', original_session_id=source['id'], provider=provider, model=model)
         if not read_token():
             raise RuntimeError('Configure a Hugging Face token before replaying.')
@@ -181,7 +185,8 @@ def replay_session(directory, source):
         for event in source['events']:
             if event.get('event') == 'user_query' and isinstance(event.get('content'), str) and event['content'].strip():
                 main(event['content'], memory, client, usage, model=model, max_tokens=config['max_tokens'],
-                     mcp_manager=manager, temporary_tools=None, approve_temporary_tool=lambda _: False)
+                     mcp_manager=manager, temporary_tools=None, approve_temporary_tool=lambda _: False,
+                     profile=profile, profile_parameters=parameters)
         status = 'closed'
     except Exception as exc:
         if usage is not None:

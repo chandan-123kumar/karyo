@@ -7,6 +7,7 @@ from context_builder import build_context
 
 from inference import create_client, error_details
 from karyo_config import load_config, ConfigError
+from karyo_config.profiles import PROFILE_PROMPTS, profile_instruction
 from memory.memory import Memory
 from tools.registry import get_tool_schemas
 from tools.dispatcher import dispatch_tool_call
@@ -20,7 +21,7 @@ from tools.temporary_files import bind_temporary_file_writer, reset_temporary_fi
 
 MAX_TOOL_ROUNDS = 20
 GITHUB_MAIN_ARCHIVE = "https://github.com/chandan-123kumar/karyo/archive/refs/heads/main.zip"
-BASE_SYSTEM_PROMPT = """You are Karyo, a coding assistant working in the user's current workspace.
+BASE_SYSTEM_PROMPT = """You are Karyo, a tool-using assistant working in the user's current workspace.
 
 For questions about "this project", "this repository", "this codebase", or the
 current workspace, use local workspace tools first. Inspect the relevant files
@@ -177,19 +178,27 @@ def update_karyo():
 
 def main(msg, memory, client=None, usage=None, model=None, max_tokens=None,
          mcp_manager=None, temporary_tools=None, approve_temporary_tool=None,
-         approve_memory=None):
+         approve_memory=None, profile=None, profile_parameters=None):
     if usage is not None:
         usage.user_query(msg)
-    if model is None or max_tokens is None:
-        config = load_config()
+    if model is None or max_tokens is None or profile is None or profile_parameters is None:
+        config = load_config(profile=profile)
         model = config['model'] if model is None else model
         max_tokens = config['max_tokens'] if max_tokens is None else max_tokens
+        profile = config['profile']
+        if profile_parameters is None:
+            profile_parameters = config['profiles'].get(profile, {})
+    if profile not in PROFILE_PROMPTS:
+        raise ConfigError('profile must be coding, general, or investing')
+    if not isinstance(profile_parameters, dict):
+        raise ConfigError('Profile parameters must be an object')
+    profile_prompt = profile_instruction(profile, profile_parameters)
     client = client if client is not None else create_client()
     memory.save_to_memory("user", msg)
     for _ in range(MAX_TOOL_ROUNDS):
         messages = build_context(memory.get_memory(), goal=memory.goal,
                                  goal_message_index=memory.goal_message_index)
-        messages.insert(0, {"role": "system", "content": BASE_SYSTEM_PROMPT})
+        messages.insert(0, {"role": "system", "content": BASE_SYSTEM_PROMPT + "\n\n" + profile_prompt})
         remembered = memory.relevant_memories(msg) if memory.store else []
         if remembered:
             instruction_position = sum(
@@ -322,12 +331,13 @@ def run():
         answer = input("Save this memory? [y/N] ").strip().lower()
         return answer in ("y", "yes")
 
-    parser = argparse.ArgumentParser(description="Karyo — a terminal coding assistant")
+    parser = argparse.ArgumentParser(description="Karyo — a terminal assistant with task profiles")
     parser.add_argument("--version", action="version", version="karyo 0.3.0")
     parser.add_argument("--update", action="store_true", help="Update Karyo from the latest GitHub main build")
     parser.add_argument("--trace", metavar="PATH", help="Save the session to this JSONL file")
     parser.add_argument("--provider", help="Override the configured inference provider")
     parser.add_argument("--model", help="Override the configured model ID")
+    parser.add_argument("--profile", choices=tuple(PROFILE_PROMPTS), help="Override the configured task profile")
     parser.add_argument("--config", metavar="PATH", help="Use this JSON configuration instead of ./config.json")
     parser.add_argument("--trace-content", action="store_true", help="Compatibility flag: session content is now recorded by default")
     commands = parser.add_subparsers(dest="command")
@@ -375,8 +385,10 @@ def run():
         temporary_writer_token = bind_temporary_file_writer(temporary_writer)
         usage = TokenUsage(args.trace, include_content=True)
         usage.begin_session()
-        config = load_config(args.config)
+        config = load_config(args.config, profile=args.profile)
         usage.event("session_configured", provider=args.provider or config['provider'], model=args.model or config['model'])
+        usage.event("profile_configured", profile=config['profile'],
+                    parameters=config['profiles'].get(config['profile'], {}))
         from tools.mcp_client import MCPClientManager
         mcp_manager = MCPClientManager()
         mcp_tools = mcp_manager.start()
@@ -391,6 +403,7 @@ def run():
             print(f"Trace: {usage.trace_path}")
         client = create_client(provider=args.provider or config['provider'], timeout=config['timeout_seconds'])
         print("Karyo · Type /help for commands, /resume to continue a conversation, or /exit to quit.")
+        print(f"Profile: {config['profile']}")
         print("Temporary tools require your approval (up to 5 per session; max 30 seconds per call).")
         print("This agent can write files and run shell commands with your user permissions.")
         while True:
@@ -478,7 +491,8 @@ def run():
                      max_tokens=config['max_tokens'], mcp_manager=mcp_manager,
                      temporary_tools=temporary_tools,
                      approve_temporary_tool=approve_temporary_tool,
-                     approve_memory=approve_memory)
+                     approve_memory=approve_memory, profile=config['profile'],
+                     profile_parameters=config['profiles'].get(config['profile'], {}))
     except (EOFError, KeyboardInterrupt):
         session_status = "interrupted"
         print("\nGoodbye.")

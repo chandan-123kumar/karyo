@@ -3,13 +3,14 @@ import json
 import math
 import os
 from pathlib import Path
+from karyo_config.profiles import PROFILE_PROMPTS
 
 
 class ConfigError(ValueError):
     pass
 
 
-def load_config(path=None):
+def load_config(path=None, profile=None):
     defaults = Path(__file__).with_name('defaults.json')
     user = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'karyo' / 'config.json'
     project = Path(path).expanduser() if path else Path.cwd() / 'config.json'
@@ -25,7 +26,27 @@ def load_config(path=None):
             raise ConfigError(f'Cannot read valid JSON configuration: {source}') from None
         if not isinstance(values, dict):
             raise ConfigError(f'Configuration must be a JSON object: {source}')
-        config.update({key: values[key] for key in ('provider', 'model', 'max_tokens', 'timeout_seconds') if key in values})
+        config.update({key: values[key] for key in ('provider', 'model', 'max_tokens', 'timeout_seconds', 'profile') if key in values})
+        # Merge by profile so a project can override investing parameters without
+        # discarding the user's general/coding profiles. Each parameter value is
+        # replaced as a whole; nested objects such as screen are not deep-merged.
+        if 'profiles' in values:
+            if not isinstance(values['profiles'], dict):
+                raise ConfigError('profiles must be an object keyed by profile name')
+            for name, parameters in values['profiles'].items():
+                if name not in PROFILE_PROMPTS or not isinstance(parameters, dict):
+                    raise ConfigError('Each profiles entry must name a built-in profile and contain an object')
+                config.setdefault('profiles', {}).setdefault(name, {}).update(parameters)
+    config.setdefault('profile', 'coding')
+    config.setdefault('profiles', {})
+    if profile is not None:
+        config['profile'] = profile
+    if not isinstance(config['profile'], str) or config['profile'] not in PROFILE_PROMPTS:
+        raise ConfigError('profile must be coding, general, or investing')
+    try:
+        json.dumps(config['profiles'], allow_nan=False)
+    except (ValueError, TypeError):
+        raise ConfigError('Profile parameters must contain finite JSON values') from None
     for key in ('provider', 'model'):
         if not isinstance(config.get(key), str) or not config[key].strip():
             raise ConfigError(f'{key} must be a nonempty string')
