@@ -183,6 +183,10 @@ def replay_session(directory, source):
         client = create_client(provider=provider, timeout=config['timeout_seconds'])
         memory = Memory()
         for event in source['events']:
+            if event.get('event') == 'profile_configured':
+                profile = event['profile']
+                parameters = event.get('parameters', {})
+                usage.event('profile_configured', profile=profile, parameters=parameters)
             if event.get('event') == 'user_query' and isinstance(event.get('content'), str) and event['content'].strip():
                 main(event['content'], memory, client, usage, model=model, max_tokens=config['max_tokens'],
                      mcp_manager=manager, temporary_tools=None, approve_temporary_tool=lambda _: False,

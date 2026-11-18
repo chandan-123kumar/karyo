@@ -2,12 +2,44 @@
 import json
 import math
 import os
+import tempfile
 from pathlib import Path
 from karyo_config.profiles import PROFILE_PROMPTS
 
 
 class ConfigError(ValueError):
     pass
+
+
+def save_profile_config(path, profile, parameters):
+    """Atomically save a profile while preserving unrelated configuration."""
+    path = Path(path).expanduser()
+    try:
+        values = json.loads(path.read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        values = {}
+    except (OSError, ValueError):
+        raise ConfigError('Cannot save: existing configuration is unreadable or invalid JSON') from None
+    if not isinstance(values, dict) or not isinstance(values.get('profiles', {}), dict):
+        raise ConfigError('Cannot save: configuration and profiles must be objects')
+    if profile not in PROFILE_PROMPTS or not isinstance(parameters, dict):
+        raise ConfigError('Cannot save: invalid profile or parameters')
+    values['profile'] = profile
+    values.setdefault('profiles', {})[profile] = parameters
+    try:
+        content = json.dumps(values, ensure_ascii=False, indent=2, allow_nan=False) + '\n'
+    except (TypeError, ValueError):
+        raise ConfigError('Cannot save: parameters must contain finite JSON values') from None
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=path.parent,
+                                         prefix='.karyo-config-', delete=False) as stream:
+            temporary_path = Path(stream.name)
+            stream.write(content)
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 def load_config(path=None, profile=None):

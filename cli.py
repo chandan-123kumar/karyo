@@ -6,7 +6,8 @@ from token_usage import TokenUsage, snapshot
 from context_builder import build_context
 
 from inference import create_client, error_details
-from karyo_config import load_config, ConfigError
+from karyo_config import load_config, save_profile_config, ConfigError
+from karyo_config.investing_ui import configure_investing, show_investing_settings
 from karyo_config.profiles import PROFILE_PROMPTS, profile_instruction
 from memory.memory import Memory
 from tools.registry import get_tool_schemas
@@ -404,6 +405,8 @@ def run():
         client = create_client(provider=args.provider or config['provider'], timeout=config['timeout_seconds'])
         print("Karyo · Type /help for commands, /resume to continue a conversation, or /exit to quit.")
         print(f"Profile: {config['profile']}")
+        if config['profile'] == 'investing':
+            print('Use /investing setup to configure market, holding period, experience, capital, and loss limit.')
         print("Temporary tools require your approval (up to 5 per session; max 30 seconds per call).")
         print("This agent can write files and run shell commands with your user permissions.")
         while True:
@@ -415,7 +418,36 @@ def run():
                 print(usage.summary())
                 return 0
             if message == "/help":
-                print("Commands: /resume, /remember [--global] <fact>, /memories, /forget <id>, /goal [new goal], /usage, /exit")
+                print("Commands: /investing [setup|save], /resume, /remember [--global] <fact>, /memories, /forget <id>, /goal [new goal], /usage, /exit")
+                continue
+            if message == '/investing':
+                show_investing_settings(config['profiles'].get('investing', {}))
+                continue
+            if message == '/investing setup':
+                parameters = configure_investing(config['profiles'].get('investing', {}))
+                if parameters is None:
+                    print('Setup cancelled; settings unchanged.')
+                else:
+                    config['profiles']['investing'] = parameters
+                    config['profile'] = 'investing'
+                    usage.event('profile_configured', profile='investing', parameters=parameters)
+                    print('Investing profile active. Settings applied to this session; use /investing save to persist.')
+                continue
+            if message == '/investing save':
+                if config['profile'] != 'investing':
+                    print('Run /investing setup to activate the investing profile first.')
+                    continue
+                from pathlib import Path
+                path = Path(args.config).expanduser() if args.config else Path.cwd() / 'config.json'
+                try:
+                    save_profile_config(path, 'investing', config['profiles'].get('investing', {}))
+                except (ConfigError, OSError) as exc:
+                    print(f'Could not save settings: {exc}')
+                else:
+                    print(f'Investing settings saved to {path}.')
+                continue
+            if message.startswith('/investing '):
+                print('Usage: /investing [setup|save]')
                 continue
             if message.startswith("/") and message.split()[0] not in {
                     "/usage", "/resume", "/memories", "/remember", "/forget", "/goal", "/help", "/exit", "/quit"}:

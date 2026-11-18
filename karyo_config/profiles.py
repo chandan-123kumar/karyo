@@ -16,7 +16,10 @@ PROFILE_PROMPTS = {
     "investing": (
         "Help with investment research, screening, portfolio analysis, and scenarios. "
         "Use the supplied market, currency, horizon, risk preferences, and screening "
-        "parameters when relevant. Ask for missing parameters only when they materially "
+        "parameters when relevant. holding_period describes the intended trade duration; "
+        "capital and max_loss are amounts in currency, with max_loss the total "
+        "portfolio loss budget, not a per-trade allowance or guaranteed maximum loss. "
+        "experience describes the user's trading experience. Ask for missing parameters only when they materially "
         "affect the requested analysis. Screening thresholds are user criteria, not "
         "proof of suitability or a prediction of returns. Obtain current financial "
         "facts from tools and cite sources with dates, currency, units, and reporting "

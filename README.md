@@ -251,8 +251,30 @@ defaults, user configuration, then project configuration (or `--config PATH`).
 Parameter keys merge within each profile; nested values such as `screen` are
 replaced as a whole. `--profile` overrides the configured profile. The active
 profile appears at startup and is recorded with its parameters for trace replay.
-Restart Karyo to change profiles; `/resume` loads the previous conversation into
-the currently selected profile.
+You can activate and configure investing directly in the terminal:
+
+```text
+>> /investing setup
+```
+
+The guided menu offers market (India, US, or another market), currency, holding
+period (intraday, several days, several weeks, or long-term), experience, capital,
+and total portfolio loss limit. Enter keeps a setting; `/cancel` discards setup.
+Amounts use the selected currency. Capital must be positive when supplied; the
+loss limit can be zero and cannot exceed supplied capital. Use `clear` to unset
+an amount. Changing currency clears previous amounts without converting them.
+These are research inputs, not an enforced loss cap or permission to trade.
+
+`/investing` shows the settings. After confirming setup, the investing profile
+becomes active for subsequent questions. Changes stay in the session until you
+run `/investing save`, which writes to `--config PATH` or the current project's
+`config.json`, preserving other settings and profiles. It also makes investing
+the default in that file. No model requests are needed to configure settings.
+Existing screening parameters are retained. Settings and subsequent changes are
+recorded in session traces and respected during replay.
+
+Use `--profile` at launch for other profiles; `/resume` loads the previous
+conversation into the currently selected profile.
 
 ## GitHub through gh
 
