@@ -276,6 +276,11 @@ recorded in session traces and respected during replay.
 Use `--profile` at launch for other profiles; `/resume` loads the previous
 conversation into the currently selected profile.
 
+For the offline investing engine evaluation, see the
+[backtesting comparison prototype](experiments/backtesting_comparison/README.md).
+It verifies Backtesting.py on synthetic data in an optional isolated environment;
+it does not connect to a broker or demonstrate investment returns.
+
 ## GitHub through gh
 
 Karyo can use GitHub CLI through its existing shell tool when a suitable GitHub

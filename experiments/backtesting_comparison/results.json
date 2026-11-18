@@ -1,0 +1,118 @@
+{
+  "experiment": "synthetic next-open execution and cost verification",
+  "created_at": "2026-11-18T18:23:00.776886+00:00",
+  "python": "3.13.5",
+  "versions": {
+    "backtesting": "0.6.5",
+    "pandas": "3.1.1",
+    "numpy": "2.5.5"
+  },
+  "dataset": {
+    "path": "experiments/backtesting_comparison/prices.csv",
+    "sha256": "aa6087f613b00a4e9787bccce31dd8e8a39726952bceb4ddbab3838283a42562",
+    "synthetic": true,
+    "rows": 9,
+    "currency": "arbitrary units"
+  },
+  "initial_cash": 10000,
+  "quantity": 10,
+  "execution": "long-only; next-bar open; no leverage; zero spread; no forced final liquidation",
+  "cases": [
+    {
+      "commission_rate_per_side": 0.0,
+      "trades": [
+        {
+          "entry_date": "2025-01-08",
+          "exit_date": "2025-01-10",
+          "quantity": 10,
+          "entry_price": 110.0,
+          "exit_price": 90.0,
+          "costs": 0.0,
+          "net_pnl": -200.0
+        },
+        {
+          "entry_date": "2025-01-14",
+          "exit_date": "2025-01-16",
+          "quantity": 10,
+          "entry_price": 100.0,
+          "exit_price": 120.0,
+          "costs": 0.0,
+          "net_pnl": 200.0
+        }
+      ],
+      "expected_final_equity": 10000.0,
+      "actual_final_equity": 10000.0,
+      "total_costs": 0.0,
+      "return_pct": 0.0,
+      "maximum_drawdown_pct": 2.0000000000000018,
+      "verification": "passed"
+    },
+    {
+      "commission_rate_per_side": 0.001,
+      "trades": [
+        {
+          "entry_date": "2025-01-08",
+          "exit_date": "2025-01-10",
+          "quantity": 10,
+          "entry_price": 110.0,
+          "exit_price": 90.0,
+          "costs": 2.0,
+          "net_pnl": -202.0
+        },
+        {
+          "entry_date": "2025-01-14",
+          "exit_date": "2025-01-16",
+          "quantity": 10,
+          "entry_price": 100.0,
+          "exit_price": 120.0,
+          "costs": 2.2,
+          "net_pnl": 197.8
+        }
+      ],
+      "expected_final_equity": 9995.8,
+      "actual_final_equity": 9995.8,
+      "total_costs": 4.2,
+      "return_pct": -0.042000000000007275,
+      "maximum_drawdown_pct": 2.0199999999999996,
+      "verification": "passed"
+    },
+    {
+      "commission_rate_per_side": 0.005,
+      "trades": [
+        {
+          "entry_date": "2025-01-08",
+          "exit_date": "2025-01-10",
+          "quantity": 10,
+          "entry_price": 110.0,
+          "exit_price": 90.0,
+          "costs": 10.0,
+          "net_pnl": -210.0
+        },
+        {
+          "entry_date": "2025-01-14",
+          "exit_date": "2025-01-16",
+          "quantity": 10,
+          "entry_price": 100.0,
+          "exit_price": 120.0,
+          "costs": 11.0,
+          "net_pnl": 189.0
+        }
+      ],
+      "expected_final_equity": 9979.0,
+      "actual_final_equity": 9979.0,
+      "total_costs": 21.0,
+      "return_pct": -0.21,
+      "maximum_drawdown_pct": 2.100000000000002,
+      "verification": "passed"
+    }
+  ],
+  "future_data_perturbation_check": "passed for the checked prefix; not a general proof against lookahead bias",
+  "wrong_execution_negative_control": "passed: same-close execution rejected by the next-open oracle",
+  "limitations": [
+    "Synthetic execution fixture, not evidence of profitability.",
+    "Costs are illustrative flat commissions, not broker or jurisdiction-specific taxes.",
+    "No slippage, bid-ask spread, liquidity limits, dividends, or corporate actions modeled.",
+    "No strategy optimization, real data, paper-trading account, or broker connection tested.",
+    "OpenAlgo was reviewed from documentation, not executed."
+  ]
+}
